@@ -1,0 +1,62 @@
+import os
+import socket
+import struct
+import ipaddress
+import subprocess
+from datetime import datetime
+from tqdm import tqdm
+
+# 로컬 IP와 서브넷 마스크를 추출하는 함수
+def get_local_ip_and_netmask():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        # 연결할 수 있는 외부 주소를 선택 (여기선 Google DNS 사용)
+        s.connect(('10.254.254.254', 1))
+        local_ip = s.getsockname()[0]
+        netmask = socket.inet_ntoa(struct.pack('!I', 0xFFFFFF00))  # 예시: 서브넷 마스크 255.255.255.0
+        return local_ip, netmask
+    except Exception as e:
+        print(f"Error: {e}")
+        return None, None
+
+# 네트워크 스캔 함수
+def scan_network():
+    local_ip, subnet_mask = get_local_ip_and_netmask()
+    
+    if not local_ip or not subnet_mask:
+        print("[!] 로컬 IP 또는 서브넷 마스크를 가져오는 데 실패했습니다.")
+        return
+    
+    print(f"[*] 네트워크 스캔 시작...")
+    print(f"현재 IP: {local_ip}, 서브넷 마스크: {subnet_mask}")
+
+    # IP 주소와 서브넷 마스크를 기반으로 네트워크 주소를 계산
+    network = ipaddress.IPv4Network(f'{local_ip}/{subnet_mask}', strict=False)
+    print(f"[*] 스캔할 네트워크: {network}")
+
+    # nmap을 사용하여 네트워크에서 기기 검색
+    try:
+        command = f"nmap -sn {str(network)}"
+        print(f"[!] 네트워크 스캔 중: {str(network)}")
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        if result.returncode != 0:
+            print(f"[!] 네트워크 스캔 실패: {result.stderr}")
+        else:
+            print(f"[*] 스캔 완료!")
+            print(result.stdout)
+    except Exception as e:
+        print(f"[!] 네트워크 스캔 중 오류 발생: {e}")
+
+# 진행 상황을 나타내는 함수
+def display_progress(scan_range):
+    total = len(scan_range)
+    print("[*] 스캔 진행 중...")
+    for i in tqdm(scan_range, desc="Scanning", unit="IP", ncols=100):
+        # 이곳에서 실제 네트워크 스캔을 진행하고, 각 IP를 스캔할 때마다 진행 상태를 갱신합니다.
+        pass
+
+# 메인 함수
+if __name__ == "__main__":
+    scan_network()
