@@ -38,18 +38,12 @@ def scan_network():
         print(f"[!] 네트워크 스캔 중: {str(network)}")
         nm.scan(hosts=str(network), arguments='-sn')  # -sn 옵션으로 Ping Sweep (호스트만 찾기)
         
+        # 호스트 목록 출력
         for host in nm.all_hosts():
             print(f"[+] {host} ({nm[host].hostname()})")
         print("[*] 스캔 완료!")
     except Exception as e:
         print(f"[!] 네트워크 스캔 중 오류 발생: {e}")
-
-# 진행 상황을 나타내는 함수
-def display_progress(scan_range):
-    total = len(scan_range)
-    print("[*] 스캔 진행 중...")
-    for i in tqdm(scan_range, desc="Scanning", unit="IP", ncols=100):
-        pass
 
 # 메인 함수
 if __name__ == "__main__":
