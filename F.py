@@ -1,4 +1,4 @@
-import nmap
+import subprocess
 import socket
 import struct
 import ipaddress
@@ -32,15 +32,18 @@ def scan_network():
     network = ipaddress.IPv4Network(f'{local_ip}/{subnet_mask}', strict=False)
     print(f"[*] 스캔할 네트워크: {network}")
 
-    # python-nmap을 사용하여 네트워크에서 기기 검색
+    # nmap을 사용하여 네트워크에서 기기 검색
     try:
-        nm = nmap.PortScanner()
         print(f"[!] 네트워크 스캔 중: {str(network)}")
-        nm.scan(hosts=str(network), arguments='-sn')  # -sn 옵션으로 Ping Sweep (호스트만 찾기)
+        # nmap 명령어 실행
+        result = subprocess.run(['nmap', '-sn', str(network)], capture_output=True, text=True)
         
-        # 호스트 목록 출력
-        for host in nm.all_hosts():
-            print(f"[+] {host} ({nm[host].hostname()})")
+        if result.returncode != 0:
+            print("[!] nmap 실행 오류:", result.stderr)
+            return
+
+        # 결과 출력
+        print(result.stdout)
         print("[*] 스캔 완료!")
     except Exception as e:
         print(f"[!] 네트워크 스캔 중 오류 발생: {e}")
